@@ -1,11 +1,16 @@
-import React from 'react'
+
 import {motion} from 'framer-motion'
 import { FcGoogle } from "react-icons/fc";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from '../utils/firebase.js';
 import axios from 'axios';
 import { serverUrl } from '../App.jsx';
+import { useDispatch } from 'react-redux';
+import { setUserData } from '../redux/userSlice.js';
+
 const Auth = () => {
+
+  const dispatch = useDispatch()
 
   const handleGoogleAuth = async () => {
       try{
@@ -13,8 +18,8 @@ const Auth = () => {
         const User  = response.user;
         const name = User.displayName;
         const email = User.email;
-
         const res = await axios.post(serverUrl + "/api/auth/google", { name, email }, { withCredentials: true });
+        dispatch(setUserData(res.data.user));
       }catch(error){
         console.error("Google Sign-In Error:", error);
       }
