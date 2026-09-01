@@ -40,9 +40,9 @@ function Navbar() {
         flex items-center justify-between px-8 py-4'>
 
             <div className='flex items-center gap-3'>
-                <img src={logo} alt="examnotes" className='w-9 h-9' />
+                <img src={logo} alt="smartnotes" className='w-9 h-9' />
                 <span className='text-lg hidden md:block font-semibold text-white'>
-                    ExamNotes <span className='text-gray-400'>AI</span>
+                    SmartNotes <span className='text-gray-400'>AI</span>
                 </span>
             </div>
 

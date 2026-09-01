@@ -47,11 +47,11 @@ function Footer() {
                 bg-clip-text text-transparent
               "
               style={{ textShadow: "0 6px 18px rgba(0,0,0,0.4)" }}>
-                 ExamNotes <span className="text-gray-400">AI</span>
+                 SmartNotes <span className="text-gray-400">AI</span>
               </span>
 
             </div>
-            <p className="text-sm text-gray-300 max-w-sm">ExamNotes AI helps students generate exam-focused notes,
+            <p className="text-sm text-gray-300 max-w-sm">SmartNotes AI helps students generate exam-focused notes,
             revision material, diagrams, and printable PDFs using AI.</p>
 
         </motion.div>
@@ -77,7 +77,7 @@ function Footer() {
     </div>
      <div className="my-6 h-px bg-white/10" />
      <p className='text-center text-xs text-gray-500'>
-        © {new Date().getFullYear()} ExamNotes AI. All rights reserved.
+        © {new Date().getFullYear()} SmartNotes AI. All rights reserved.
      </p>
    
 

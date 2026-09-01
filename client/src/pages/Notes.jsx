@@ -3,8 +3,8 @@ import { motion } from "motion/react"
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import TopicForm from '../components/TopicForm'
-// import Sidebar from '../components/Sidebar'
-// import FinalResult from '../components/FinalResult'
+import Sidebar from '../components/Sidebar'
+import FinalResult from '../components/FinalResult'
 function Notes() {
   const navigate = useNavigate()
   const { userData } = useSelector((state) => state.user)
@@ -30,7 +30,7 @@ function Notes() {
       >
         <div onClick={() => navigate("/")} className='cursor-pointer'><h1 className='text-2xl font-bold
             bg-linear-to-r from-white via-gray-300 to-white
-            bg-clip-text text-transparent'>ExamNotes AI</h1>
+            bg-clip-text text-transparent'>SmartNotes AI</h1>
           <p className='text-sm text-gray-300 mt-1'>AI-powered exam-oriented notes & revision</p></div>
 
         <div className='flex items-center gap-4 flex-wrap'>

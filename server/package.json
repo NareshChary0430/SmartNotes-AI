@@ -7,7 +7,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-   "dev" :"nodemon index.js"
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",
@@ -17,6 +17,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.2",
     "nodemon": "^3.1.14",
-    "pdfkit": "^0.18.0"
+    "pdfkit": "^0.18.0",
+    "stripe": "^22.5.0"
   }
 }

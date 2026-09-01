@@ -11,6 +11,8 @@ import { getCurrentUser } from './services/api.js'
 import History from './pages/History.jsx'
 import Notes from './pages/Notes.jsx'
 import Pricing from './pages/Pricing.jsx'
+import PaymentSuccess from './pages/PaymentSuccess'
+import PaymentFailed from './pages/PaymentFailed'
 
 
 
@@ -36,7 +38,8 @@ const App = () => {
       <Route path='/history' element={userData? <History/> : <Navigate to="/auth" replace/>}/>
       <Route path='/notes' element={userData? <Notes/> : <Navigate to="/auth" replace/>}/>
       <Route path='/pricing' element={userData? <Pricing/> : <Navigate to="/auth" replace/>}/>
-
+       <Route path='/payment-success' element={<PaymentSuccess/>}/>
+      <Route path='/payment-failed' element={<PaymentFailed/>}/>
         </Routes>
     </>
   )
