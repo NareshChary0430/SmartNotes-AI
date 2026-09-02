@@ -17,7 +17,7 @@ import PaymentFailed from './pages/PaymentFailed'
 
 
 
-export const serverUrl = "http://localhost:8000"
+export const serverUrl = "https://smartnotes-ai-64ub.onrender.com"
 
 
 const App = () => {
