@@ -23,7 +23,7 @@ app.post(
 );
 
 app.use(cors({
-  origin: 'https://smartnotes-ai-1-05lu.onrender.com',
+  origin: 'https://smartnotes-ai-client.onrender.com',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
