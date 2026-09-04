@@ -17,8 +17,8 @@ export const pdfDownload = async (req, res) => {
         const doc = new PDFDocument({
             size: "A4",
             margins: {
-                top: 65,
-                bottom: 60,
+                top: 55,
+                bottom: 55,
                 left: 55,
                 right: 55,
             },
@@ -30,7 +30,10 @@ export const pdfDownload = async (req, res) => {
             },
         });
 
-        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Type",
+            "application/pdf"
+        );
 
         res.setHeader(
             "Content-Disposition",
@@ -51,8 +54,8 @@ export const pdfDownload = async (req, res) => {
             cyan: "#0891B2",
             dark: "#111827",
             gray: "#6B7280",
-            lightGray: "#F3F4F6",
             border: "#D1D5DB",
+            light: "#F8FAFC",
             white: "#FFFFFF",
         };
 
@@ -60,21 +63,26 @@ export const pdfDownload = async (req, res) => {
         // PAGE DIMENSIONS
         // =====================================================
 
-        const pageWidth =
+        const left = doc.page.margins.left;
+
+        const right =
+            doc.page.width -
+            doc.page.margins.right;
+
+        const width =
             doc.page.width -
             doc.page.margins.left -
             doc.page.margins.right;
 
-        const contentLeft = doc.page.margins.left;
+        const top =
+            doc.page.margins.top;
 
-        const contentRight =
-            doc.page.width - doc.page.margins.right;
-
-        const bottomLimit =
-            doc.page.height - doc.page.margins.bottom;
+        const bottom =
+            doc.page.height -
+            doc.page.margins.bottom;
 
         // =====================================================
-        // HELPERS
+        // TEXT CLEANER
         // =====================================================
 
         const cleanText = (text = "") => {
@@ -87,13 +95,20 @@ export const pdfDownload = async (req, res) => {
                 .trim();
         };
 
-        const checkPageSpace = (height = 40) => {
-            if (doc.y + height > bottomLimit) {
-                doc.addPage();
-                return true;
-            }
+        // =====================================================
+        // PAGE BREAK
+        // =====================================================
 
-            return false;
+        const newPage = () => {
+            doc.addPage();
+
+            doc.y = top;
+        };
+
+        const ensureSpace = (height = 30) => {
+            if (doc.y + height > bottom) {
+                newPage();
+            }
         };
 
         // =====================================================
@@ -104,25 +119,25 @@ export const pdfDownload = async (req, res) => {
             doc.save();
 
             doc
-                .moveTo(contentLeft, 40)
-                .lineTo(contentRight, 40)
-                .strokeColor(COLORS.border)
-                .lineWidth(0.5)
-                .stroke();
-
-            doc
                 .font("Helvetica-Bold")
                 .fontSize(8)
                 .fillColor(COLORS.gray)
                 .text(
                     "SmartNotes AI",
-                    contentLeft,
+                    left,
                     25,
                     {
-                        width: pageWidth,
+                        width,
                         align: "left",
                     }
                 );
+
+            doc
+                .moveTo(left, 40)
+                .lineTo(right, 40)
+                .strokeColor(COLORS.border)
+                .lineWidth(0.5)
+                .stroke();
 
             doc.restore();
         };
@@ -135,10 +150,13 @@ export const pdfDownload = async (req, res) => {
             doc.save();
 
             doc
-                .moveTo(contentLeft, doc.page.height - 42)
+                .moveTo(
+                    left,
+                    doc.page.height - 40
+                )
                 .lineTo(
-                    contentRight,
-                    doc.page.height - 42
+                    right,
+                    doc.page.height - 40
                 )
                 .strokeColor(COLORS.border)
                 .lineWidth(0.5)
@@ -150,10 +168,10 @@ export const pdfDownload = async (req, res) => {
                 .fillColor(COLORS.gray)
                 .text(
                     `SmartNotes AI  •  Page ${doc.page.number}`,
-                    contentLeft,
-                    doc.page.height - 31,
+                    left,
+                    doc.page.height - 30,
                     {
-                        width: pageWidth,
+                        width,
                         align: "center",
                     }
                 );
@@ -162,22 +180,14 @@ export const pdfDownload = async (req, res) => {
         };
 
         // =====================================================
-        // PAGE HEADER
-        // =====================================================
-
-        doc.on("pageAdded", () => {
-            drawHeader();
-        });
-
-        // =====================================================
-        // TEXT HELPERS
+        // TEXT FUNCTIONS
         // =====================================================
 
         const heading = (
             text,
             color = COLORS.primary
         ) => {
-            checkPageSpace(60);
+            ensureSpace(55);
 
             doc
                 .font("Helvetica-Bold")
@@ -185,24 +195,24 @@ export const pdfDownload = async (req, res) => {
                 .fillColor(color)
                 .text(
                     cleanText(text),
-                    contentLeft,
+                    left,
                     doc.y,
                     {
-                        width: pageWidth,
+                        width,
                         lineGap: 2,
                     }
                 );
 
-            doc.moveDown(0.35);
+            doc.moveDown(0.3);
 
             doc
-                .moveTo(contentLeft, doc.y)
-                .lineTo(contentRight, doc.y)
+                .moveTo(left, doc.y)
+                .lineTo(right, doc.y)
                 .strokeColor(color)
                 .lineWidth(1)
                 .stroke();
 
-            doc.moveDown(0.55);
+            doc.y += 8;
 
             doc.fillColor(COLORS.dark);
         };
@@ -211,23 +221,22 @@ export const pdfDownload = async (req, res) => {
             text,
             color = COLORS.purple
         ) => {
-            checkPageSpace(45);
+            ensureSpace(35);
 
             doc
                 .font("Helvetica-Bold")
-                .fontSize(12.5)
+                .fontSize(12)
                 .fillColor(color)
                 .text(
                     cleanText(text),
-                    contentLeft,
+                    left,
                     doc.y,
                     {
-                        width: pageWidth,
-                        lineGap: 2,
+                        width,
                     }
                 );
 
-            doc.moveDown(0.4);
+            doc.moveDown(0.35);
 
             doc.fillColor(COLORS.dark);
         };
@@ -238,7 +247,7 @@ export const pdfDownload = async (req, res) => {
         ) => {
             if (!text) return;
 
-            checkPageSpace(30);
+            ensureSpace(25);
 
             doc
                 .font(
@@ -246,42 +255,35 @@ export const pdfDownload = async (req, res) => {
                         ? "Helvetica-Bold"
                         : "Helvetica"
                 )
-                .fontSize(options.size || 10.5)
+                .fontSize(
+                    options.size || 10.5
+                )
                 .fillColor(
-                    options.color || COLORS.dark
+                    options.color ||
+                        COLORS.dark
                 )
                 .text(
                     cleanText(text),
-                    contentLeft,
+                    left,
                     doc.y,
                     {
-                        width: pageWidth,
+                        width,
                         lineGap: 3,
-                        paragraphGap: 4,
                         align: "left",
                     }
                 );
 
-            doc.moveDown(0.2);
+            doc.moveDown(0.25);
 
             doc
                 .font("Helvetica")
                 .fillColor(COLORS.dark);
         };
 
-        const bullet = (
-            text,
-            level = 0
-        ) => {
+        const bullet = (text) => {
             if (!text) return;
 
-            const indent =
-                contentLeft + level * 18;
-
-            const width =
-                contentRight - indent;
-
-            checkPageSpace(25);
+            ensureSpace(25);
 
             doc
                 .font("Helvetica")
@@ -289,10 +291,10 @@ export const pdfDownload = async (req, res) => {
                 .fillColor(COLORS.dark)
                 .text(
                     `• ${cleanText(text)}`,
-                    indent,
+                    left + 10,
                     doc.y,
                     {
-                        width,
+                        width: width - 10,
                         lineGap: 3,
                         align: "left",
                     }
@@ -307,7 +309,7 @@ export const pdfDownload = async (req, res) => {
         ) => {
             if (!text) return;
 
-            checkPageSpace(25);
+            ensureSpace(25);
 
             doc
                 .font("Helvetica")
@@ -315,10 +317,10 @@ export const pdfDownload = async (req, res) => {
                 .fillColor(COLORS.dark)
                 .text(
                     `${number}. ${cleanText(text)}`,
-                    contentLeft,
+                    left,
                     doc.y,
                     {
-                        width: pageWidth,
+                        width,
                         lineGap: 3,
                         align: "left",
                     }
@@ -328,140 +330,127 @@ export const pdfDownload = async (req, res) => {
         };
 
         // =====================================================
-        // MARKDOWN TABLE
+        // TABLE
         // =====================================================
 
         const renderTable = (rows) => {
-            if (!rows || rows.length === 0) {
-                return;
-            }
+            if (!rows.length) return;
 
-            const columnCount = Math.max(
+            const columns = Math.max(
                 ...rows.map(row => row.length)
             );
 
             const columnWidth =
-                pageWidth / columnCount;
+                width / columns;
 
-            const cellPadding = 6;
+            const padding = 5;
 
-            const calculateRowHeight = (
-                row,
-                isHeader = false
-            ) => {
-                doc.font(
-                    isHeader
-                        ? "Helvetica-Bold"
-                        : "Helvetica"
-                );
+            rows.forEach(
+                (row, rowIndex) => {
+                    const isHeader =
+                        rowIndex === 0;
 
-                doc.fontSize(8.5);
-
-                let maxHeight = 24;
-
-                row.forEach(cell => {
-                    const textHeight =
-                        doc.heightOfString(
-                            cleanText(cell),
-                            {
-                                width:
-                                    columnWidth -
-                                    cellPadding * 2,
-                                lineGap: 2,
-                            }
-                        );
-
-                    maxHeight = Math.max(
-                        maxHeight,
-                        textHeight +
-                            cellPadding * 2
-                    );
-                });
-
-                return maxHeight;
-            };
-
-            let currentY = doc.y;
-
-            rows.forEach((row, rowIndex) => {
-                const isHeader =
-                    rowIndex === 0;
-
-                const rowHeight =
-                    calculateRowHeight(
-                        row,
+                    doc.font(
                         isHeader
+                            ? "Helvetica-Bold"
+                            : "Helvetica"
                     );
 
-                if (
-                    currentY +
-                        rowHeight >
-                    bottomLimit
-                ) {
-                    doc.addPage();
+                    doc.fontSize(8);
 
-                    currentY =
-                        doc.page.margins.top;
-                }
+                    let rowHeight = 22;
 
-                row.forEach(
-                    (cell, columnIndex) => {
-                        const x =
-                            contentLeft +
-                            columnIndex *
-                                columnWidth;
-
-                        doc
-                            .rect(
-                                x,
-                                currentY,
-                                columnWidth,
-                                rowHeight
-                            )
-                            .fillAndStroke(
-                                isHeader
-                                    ? "#EEF2FF"
-                                    : COLORS.white,
-                                COLORS.border
-                            );
-
-                        doc
-                            .font(
-                                isHeader
-                                    ? "Helvetica-Bold"
-                                    : "Helvetica"
-                            )
-                            .fontSize(8.5)
-                            .fillColor(
-                                COLORS.dark
-                            )
-                            .text(
+                    row.forEach(cell => {
+                        const height =
+                            doc.heightOfString(
                                 cleanText(cell),
-                                x + cellPadding,
-                                currentY +
-                                    cellPadding,
                                 {
                                     width:
                                         columnWidth -
-                                        cellPadding * 2,
-                                    height:
-                                        rowHeight -
-                                        cellPadding * 2,
+                                        padding * 2,
                                     lineGap: 2,
-                                    align: "left",
                                 }
                             );
+
+                        rowHeight = Math.max(
+                            rowHeight,
+                            height +
+                                padding * 2
+                        );
+                    });
+
+                    if (
+                        doc.y +
+                            rowHeight >
+                        bottom
+                    ) {
+                        newPage();
                     }
-                );
 
-                currentY += rowHeight;
-            });
+                    const y = doc.y;
 
-            doc.y = currentY + 10;
+                    row.forEach(
+                        (cell, columnIndex) => {
+                            const x =
+                                left +
+                                columnIndex *
+                                    columnWidth;
+
+                            doc
+                                .rect(
+                                    x,
+                                    y,
+                                    columnWidth,
+                                    rowHeight
+                                )
+                                .fillAndStroke(
+                                    isHeader
+                                        ? "#EEF2FF"
+                                        : COLORS.white,
+                                    COLORS.border
+                                );
+
+                            doc
+                                .font(
+                                    isHeader
+                                        ? "Helvetica-Bold"
+                                        : "Helvetica"
+                                )
+                                .fontSize(8)
+                                .fillColor(
+                                    COLORS.dark
+                                )
+                                .text(
+                                    cleanText(
+                                        cell
+                                    ),
+                                    x + padding,
+                                    y + padding,
+                                    {
+                                        width:
+                                            columnWidth -
+                                            padding *
+                                                2,
+                                        height:
+                                            rowHeight -
+                                            padding *
+                                                2,
+                                        lineGap: 2,
+                                    }
+                                );
+                        }
+                    );
+
+                    doc.y =
+                        y + rowHeight;
+                }
+            );
+
+            doc.y += 8;
         };
 
         // =====================================================
-        // MARKDOWN RENDERER
+        // MARKDOWN
         // =====================================================
 
         const renderMarkdown = (
@@ -474,35 +463,29 @@ export const pdfDownload = async (req, res) => {
                 .split("\n");
 
             let tableRows = [];
-            let numberedCounter = 0;
 
             const flushTable = () => {
-                if (tableRows.length > 0) {
+                if (tableRows.length) {
                     renderTable(tableRows);
                     tableRows = [];
                 }
             };
 
-            for (let i = 0; i < lines.length; i++) {
-                const rawLine = lines[i];
+            for (
+                let i = 0;
+                i < lines.length;
+                i++
+            ) {
+                const line =
+                    lines[i].trim();
 
-                const line = rawLine.trim();
-
-                // Empty line
                 if (!line) {
                     flushTable();
-
-                    doc.moveDown(0.25);
-
-                    numberedCounter = 0;
-
+                    doc.moveDown(0.2);
                     continue;
                 }
 
-                // =================================================
                 // TABLE
-                // =================================================
-
                 if (
                     line.startsWith("|") &&
                     line.endsWith("|")
@@ -511,13 +494,16 @@ export const pdfDownload = async (req, res) => {
                         .slice(1, -1)
                         .split("|")
                         .map(cell =>
-                            cleanText(cell.trim())
+                            cleanText(
+                                cell.trim()
+                            )
                         );
 
-                    // Skip separator row
                     if (
                         cells.every(cell =>
-                            /^[-:]+$/.test(cell)
+                            /^[-:]+$/.test(
+                                cell
+                            )
                         )
                     ) {
                         continue;
@@ -525,13 +511,13 @@ export const pdfDownload = async (req, res) => {
 
                     tableRows.push(cells);
 
-                    // Check next line
-                    const nextLine =
-                        lines[i + 1]?.trim();
+                    const next =
+                        lines[i + 1]
+                            ?.trim();
 
                     if (
-                        !nextLine ||
-                        !nextLine.startsWith("|")
+                        !next ||
+                        !next.startsWith("|")
                     ) {
                         flushTable();
                     }
@@ -539,58 +525,36 @@ export const pdfDownload = async (req, res) => {
                     continue;
                 }
 
-                // If current line isn't table
                 flushTable();
 
-                // =================================================
                 // H1
-                // =================================================
-
                 if (line.startsWith("# ")) {
                     heading(
                         line.substring(2),
                         COLORS.primary
                     );
-
-                    numberedCounter = 0;
-
                     continue;
                 }
 
-                // =================================================
                 // H2
-                // =================================================
-
                 if (line.startsWith("## ")) {
                     subHeading(
                         line.substring(3),
                         COLORS.purple
                     );
-
-                    numberedCounter = 0;
-
                     continue;
                 }
 
-                // =================================================
                 // H3
-                // =================================================
-
                 if (line.startsWith("### ")) {
                     subHeading(
                         line.substring(4),
                         COLORS.blue
                     );
-
-                    numberedCounter = 0;
-
                     continue;
                 }
 
-                // =================================================
                 // BULLET
-                // =================================================
-
                 if (
                     line.startsWith("- ") ||
                     line.startsWith("* ")
@@ -598,87 +562,66 @@ export const pdfDownload = async (req, res) => {
                     bullet(
                         line.substring(2)
                     );
-
-                    numberedCounter = 0;
-
                     continue;
                 }
 
-                // =================================================
-                // NUMBERED LIST
-                // =================================================
-
-                const numberedMatch =
+                // NUMBER
+                const numberMatch =
                     line.match(
                         /^(\d+)\.\s+(.*)$/
                     );
 
-                if (numberedMatch) {
-                    numberedCounter =
-                        Number(
-                            numberedMatch[1]
-                        );
-
+                if (numberMatch) {
                     numbered(
-                        numberedCounter,
-                        numberedMatch[2]
+                        Number(
+                            numberMatch[1]
+                        ),
+                        numberMatch[2]
                     );
-
                     continue;
                 }
 
-                // =================================================
                 // HORIZONTAL LINE
-                // =================================================
-
                 if (
                     line === "---" ||
                     line === "***"
                 ) {
-                    checkPageSpace(20);
+                    ensureSpace(15);
 
                     doc
                         .moveTo(
-                            contentLeft,
+                            left,
                             doc.y
                         )
                         .lineTo(
-                            contentRight,
+                            right,
                             doc.y
                         )
                         .strokeColor(
                             COLORS.border
                         )
-                        .lineWidth(0.5)
                         .stroke();
 
                     doc.moveDown(0.5);
 
-                    numberedCounter = 0;
-
                     continue;
                 }
 
-                // =================================================
                 // NORMAL TEXT
-                // =================================================
-
                 paragraph(line);
-
-                numberedCounter = 0;
             }
 
             flushTable();
         };
 
         // =====================================================
-        // QUESTION CARD
+        // QUESTION
         // =====================================================
 
         const renderQuestion = (
             item,
             index,
-            marks,
+            defaultMarks,
             color
         ) => {
             if (!item) return;
@@ -691,199 +634,135 @@ export const pdfDownload = async (req, res) => {
                 item.answer ||
                 "Answer not available";
 
-            // Estimate minimum space
-            checkPageSpace(100);
+            const marks =
+                item.marks ||
+                defaultMarks;
 
-            const cardTop = doc.y;
-
-            // -------------------------------------------------
             // Question header
-            // -------------------------------------------------
+            ensureSpace(75);
+
+            const headerY = doc.y;
 
             doc
                 .roundedRect(
-                    contentLeft,
-                    cardTop,
-                    pageWidth,
-                    48,
+                    left,
+                    headerY,
+                    width,
+                    42,
                     6
                 )
                 .fillColor(color)
                 .fill();
 
-            // Question text
             doc
                 .font("Helvetica-Bold")
-                .fontSize(10.5)
+                .fontSize(10)
                 .fillColor(COLORS.white)
                 .text(
                     `Q${index + 1}. ${cleanText(
                         question
                     )}`,
-                    contentLeft + 12,
-                    cardTop + 10,
+                    left + 12,
+                    headerY + 10,
                     {
                         width:
-                            pageWidth - 90,
+                            width - 85,
                         lineGap: 2,
                     }
                 );
 
-            // Marks
             doc
                 .font("Helvetica-Bold")
                 .fontSize(8)
                 .fillColor(COLORS.white)
                 .text(
                     `${marks} MARKS`,
-                    contentRight - 65,
-                    cardTop + 17,
+                    right - 60,
+                    headerY + 15,
                     {
-                        width: 55,
+                        width: 50,
                         align: "right",
                     }
                 );
 
-            // Move below header
-            doc.y = cardTop + 62;
+            doc.y =
+                headerY + 55;
 
-            // -------------------------------------------------
-            // Answer title
-            // -------------------------------------------------
-
+            // Answer
             doc
                 .font("Helvetica-Bold")
-                .fontSize(11)
+                .fontSize(10.5)
                 .fillColor(COLORS.green)
                 .text(
                     "Answer:",
-                    contentLeft,
+                    left,
                     doc.y
                 );
 
-            doc.moveDown(0.35);
-
-            // -------------------------------------------------
-            // Answer
-            // -------------------------------------------------
+            doc.moveDown(0.3);
 
             doc.fillColor(COLORS.dark);
 
             renderMarkdown(answer);
 
-            doc.moveDown(0.6);
+            doc.moveDown(0.5);
 
-            // -------------------------------------------------
-            // Divider
-            // -------------------------------------------------
-
-            checkPageSpace(15);
+            ensureSpace(10);
 
             doc
-                .moveTo(
-                    contentLeft,
-                    doc.y
-                )
-                .lineTo(
-                    contentRight,
-                    doc.y
-                )
-                .strokeColor(
-                    COLORS.border
-                )
+                .moveTo(left, doc.y)
+                .lineTo(right, doc.y)
+                .strokeColor(COLORS.border)
                 .lineWidth(0.5)
                 .stroke();
 
-            doc.moveDown(0.7);
+            doc.y += 10;
         };
 
         // =====================================================
-        // COVER PAGE
+        // DOCUMENT START
         // =====================================================
 
-        doc.moveDown(4);
+        drawHeader();
+
+        // =====================================================
+        // TITLE
+        // =====================================================
 
         doc
             .font("Helvetica-Bold")
-            .fontSize(30)
+            .fontSize(24)
             .fillColor(COLORS.primary)
             .text(
                 "SmartNotes AI",
-                contentLeft,
+                left,
                 doc.y,
                 {
-                    width: pageWidth,
+                    width,
                     align: "center",
                 }
             );
 
-        doc.moveDown(0.5);
+        doc.moveDown(0.25);
 
         doc
             .font("Helvetica")
-            .fontSize(13)
+            .fontSize(11)
             .fillColor(COLORS.gray)
             .text(
                 "AI-Powered Exam Preparation",
-                contentLeft,
+                left,
                 doc.y,
                 {
-                    width: pageWidth,
+                    width,
                     align: "center",
                 }
             );
 
-        doc.moveDown(2);
-
-        const coverBoxY = doc.y;
-
-        doc
-            .roundedRect(
-                contentLeft + 35,
-                coverBoxY,
-                pageWidth - 70,
-                90,
-                10
-            )
-            .fillColor("#EEF2FF")
-            .fill();
-
-        doc
-            .font("Helvetica-Bold")
-            .fontSize(18)
-            .fillColor(COLORS.primary)
-            .text(
-                "Exam-Oriented Study Material",
-                contentLeft + 50,
-                coverBoxY + 32,
-                {
-                    width:
-                        pageWidth - 100,
-                    align: "center",
-                }
-            );
-
-        doc.moveDown(6);
-
-        doc
-            .font("Helvetica")
-            .fontSize(10)
-            .fillColor(COLORS.gray)
-            .text(
-                "Generated by SmartNotes AI",
-                contentLeft,
-                doc.y,
-                {
-                    width: pageWidth,
-                    align: "center",
-                }
-            );
-
-        // New page
-        doc.addPage();
+        doc.moveDown(1.5);
 
         // =====================================================
-        // OVERVIEW
+        // STUDY OVERVIEW
         // =====================================================
 
         heading(
@@ -898,7 +777,7 @@ export const pdfDownload = async (req, res) => {
             }`,
             {
                 bold: true,
-                size: 12,
+                size: 11,
                 color: COLORS.primary,
             }
         );
@@ -953,7 +832,8 @@ export const pdfDownload = async (req, res) => {
         if (
             Array.isArray(
                 result.revisionPoints
-            )
+            ) &&
+            result.revisionPoints.length
         ) {
             heading(
                 "Quick Revision Points",
@@ -961,9 +841,7 @@ export const pdfDownload = async (req, res) => {
             );
 
             result.revisionPoints.forEach(
-                point => {
-                    bullet(point);
-                }
+                point => bullet(point)
             );
         }
 
@@ -975,7 +853,7 @@ export const pdfDownload = async (req, res) => {
             Array.isArray(
                 result.questions?.short
             ) &&
-            result.questions.short.length > 0
+            result.questions.short.length
         ) {
             heading(
                 "5-Mark Short Answers",
@@ -994,7 +872,7 @@ export const pdfDownload = async (req, res) => {
                     renderQuestion(
                         item,
                         index,
-                        item.marks || 5,
+                        5,
                         COLORS.blue
                     );
                 }
@@ -1009,7 +887,7 @@ export const pdfDownload = async (req, res) => {
             Array.isArray(
                 result.questions?.long
             ) &&
-            result.questions.long.length > 0
+            result.questions.long.length
         ) {
             heading(
                 "10-Mark Long Answers",
@@ -1017,7 +895,7 @@ export const pdfDownload = async (req, res) => {
             );
 
             paragraph(
-                "These answers are designed for 10-mark examination questions and provide detailed, structured explanations.",
+                "These answers are designed for 10-mark examination questions.",
                 {
                     color: COLORS.gray,
                 }
@@ -1028,7 +906,7 @@ export const pdfDownload = async (req, res) => {
                     renderQuestion(
                         item,
                         index,
-                        item.marks || 10,
+                        10,
                         COLORS.purple
                     );
                 }
@@ -1036,7 +914,7 @@ export const pdfDownload = async (req, res) => {
         }
 
         // =====================================================
-        // DIAGRAM QUESTION TEXT
+        // DIAGRAM QUESTION
         // =====================================================
 
         if (
@@ -1051,39 +929,30 @@ export const pdfDownload = async (req, res) => {
                 result.questions.diagram,
                 {
                     bold: true,
-                    size: 11,
+                    size: 10.5,
                 }
             );
         }
 
         // =====================================================
-        // NOTE:
-        // Mermaid/image section intentionally removed.
-        // Charts can also be removed if you want a
-        // completely text-only PDF.
-        // =====================================================
-
-        // =====================================================
         // FOOTERS
         // =====================================================
 
-        const pageRange =
+        const pages =
             doc.bufferedPageRange();
 
         for (
-            let i = pageRange.start;
+            let i = pages.start;
             i <
-            pageRange.start +
-                pageRange.count;
+            pages.start + pages.count;
             i++
         ) {
             doc.switchToPage(i);
-
             drawFooter();
         }
 
         // =====================================================
-        // END PDF
+        // FINISH
         // =====================================================
 
         doc.end();
