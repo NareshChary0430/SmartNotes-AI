@@ -19,7 +19,7 @@ export const pdfDownload = async (req, res) => {
 
             margins: {
                 top: 55,
-                bottom: 55,
+                bottom: 75,
                 left: 55,
                 right: 55,
             },
@@ -82,9 +82,14 @@ export const pdfDownload = async (req, res) => {
         const top =
             doc.page.margins.top;
 
+        /*
+         * Reserve enough space for the footer.
+         *
+         * Footer is drawn around y = 750-790.
+         * Content should stop before that.
+         */
         const bottom =
-            doc.page.height -
-            doc.page.margins.bottom;
+            doc.page.height - 75;
 
         // =====================================================
         // TEXT CLEANER
@@ -131,8 +136,9 @@ export const pdfDownload = async (req, res) => {
 
             doc.restore();
 
-            // Important:
-            // Do not let header rendering change the content cursor.
+            /*
+             * Header must never move the content cursor.
+             */
             doc.y = top;
         };
 
@@ -143,13 +149,27 @@ export const pdfDownload = async (req, res) => {
         const drawFooter = (pageNumber) => {
             doc.save();
 
+            /*
+             * IMPORTANT:
+             *
+             * PDFKit normally prevents text from being written
+             * below the bottom margin.
+             *
+             * Since the footer intentionally lives inside that
+             * area, temporarily disable the bottom margin.
+             */
+            const originalBottomMargin =
+                doc.page.margins.bottom;
+
+            doc.page.margins.bottom = 0;
+
             const footerLineY =
-                doc.page.height - 42;
+                doc.page.height - 48;
 
             const footerTextY =
-                doc.page.height - 30;
+                doc.page.height - 37;
 
-            // Footer line
+            // Footer separator
             doc
                 .moveTo(
                     left,
@@ -159,7 +179,9 @@ export const pdfDownload = async (req, res) => {
                     right,
                     footerLineY
                 )
-                .strokeColor(COLORS.border)
+                .strokeColor(
+                    COLORS.border
+                )
                 .lineWidth(0.5)
                 .stroke();
 
@@ -167,7 +189,9 @@ export const pdfDownload = async (req, res) => {
             doc
                 .font("Helvetica")
                 .fontSize(8)
-                .fillColor(COLORS.gray)
+                .fillColor(
+                    COLORS.gray
+                )
                 .text(
                     `SmartNotes AI  •  Page ${pageNumber}`,
                     left,
@@ -175,11 +199,13 @@ export const pdfDownload = async (req, res) => {
                     {
                         width,
                         align: "center",
-
-                        // VERY IMPORTANT
                         lineBreak: false,
                     }
                 );
+
+            // Restore original margin
+            doc.page.margins.bottom =
+                originalBottomMargin;
 
             doc.restore();
         };
@@ -196,8 +222,13 @@ export const pdfDownload = async (req, res) => {
             doc.y = top;
         };
 
-        const ensureSpace = (height = 30) => {
-            if (doc.y + height > bottom) {
+        const ensureSpace = (
+            height = 30
+        ) => {
+            if (
+                doc.y + height >
+                bottom
+            ) {
                 newPage();
             }
         };
@@ -229,15 +260,23 @@ export const pdfDownload = async (req, res) => {
             doc.moveDown(0.3);
 
             doc
-                .moveTo(left, doc.y)
-                .lineTo(right, doc.y)
+                .moveTo(
+                    left,
+                    doc.y
+                )
+                .lineTo(
+                    right,
+                    doc.y
+                )
                 .strokeColor(color)
                 .lineWidth(1)
                 .stroke();
 
             doc.y += 8;
 
-            doc.fillColor(COLORS.dark);
+            doc.fillColor(
+                COLORS.dark
+            );
         };
 
         // =====================================================
@@ -265,7 +304,9 @@ export const pdfDownload = async (req, res) => {
 
             doc.moveDown(0.35);
 
-            doc.fillColor(COLORS.dark);
+            doc.fillColor(
+                COLORS.dark
+            );
         };
 
         // =====================================================
@@ -308,7 +349,9 @@ export const pdfDownload = async (req, res) => {
 
             doc
                 .font("Helvetica")
-                .fillColor(COLORS.dark);
+                .fillColor(
+                    COLORS.dark
+                );
         };
 
         // =====================================================
@@ -323,13 +366,16 @@ export const pdfDownload = async (req, res) => {
             doc
                 .font("Helvetica")
                 .fontSize(10.5)
-                .fillColor(COLORS.dark)
+                .fillColor(
+                    COLORS.dark
+                )
                 .text(
                     `• ${cleanText(text)}`,
                     left + 10,
                     doc.y,
                     {
-                        width: width - 10,
+                        width:
+                            width - 10,
                         lineGap: 3,
                         align: "left",
                     }
@@ -353,9 +399,13 @@ export const pdfDownload = async (req, res) => {
             doc
                 .font("Helvetica")
                 .fontSize(10.5)
-                .fillColor(COLORS.dark)
+                .fillColor(
+                    COLORS.dark
+                )
                 .text(
-                    `${number}. ${cleanText(text)}`,
+                    `${number}. ${cleanText(
+                        text
+                    )}`,
                     left,
                     doc.y,
                     {
@@ -372,14 +422,18 @@ export const pdfDownload = async (req, res) => {
         // TABLE
         // =====================================================
 
-        const renderTable = (rows) => {
+        const renderTable = (
+            rows
+        ) => {
             if (!rows.length) return;
 
-            const columns = Math.max(
-                ...rows.map(
-                    row => row.length
-                )
-            );
+            const columns =
+                Math.max(
+                    ...rows.map(
+                        row =>
+                            row.length
+                    )
+                );
 
             const columnWidth =
                 width / columns;
@@ -387,7 +441,10 @@ export const pdfDownload = async (req, res) => {
             const padding = 5;
 
             rows.forEach(
-                (row, rowIndex) => {
+                (
+                    row,
+                    rowIndex
+                ) => {
 
                     const isHeader =
                         rowIndex === 0;
@@ -402,30 +459,40 @@ export const pdfDownload = async (req, res) => {
 
                     let rowHeight = 22;
 
+                    // ---------------------------------------------
                     // Calculate row height
-                    row.forEach(cell => {
+                    // ---------------------------------------------
 
-                        const height =
-                            doc.heightOfString(
-                                cleanText(cell),
-                                {
-                                    width:
-                                        columnWidth -
-                                        padding * 2,
+                    row.forEach(
+                        cell => {
 
-                                    lineGap: 2,
-                                }
-                            );
+                            const height =
+                                doc.heightOfString(
+                                    cleanText(
+                                        cell
+                                    ),
+                                    {
+                                        width:
+                                            columnWidth -
+                                            padding * 2,
 
-                        rowHeight =
-                            Math.max(
-                                rowHeight,
-                                height +
-                                padding * 2
-                            );
-                    });
+                                        lineGap: 2,
+                                    }
+                                );
 
+                            rowHeight =
+                                Math.max(
+                                    rowHeight,
+                                    height +
+                                    padding * 2
+                                );
+                        }
+                    );
+
+                    // ---------------------------------------------
                     // Page break
+                    // ---------------------------------------------
+
                     if (
                         doc.y +
                         rowHeight >
@@ -434,7 +501,12 @@ export const pdfDownload = async (req, res) => {
                         newPage();
                     }
 
-                    const y = doc.y;
+                    const y =
+                        doc.y;
+
+                    // ---------------------------------------------
+                    // Draw cells
+                    // ---------------------------------------------
 
                     row.forEach(
                         (
@@ -447,7 +519,6 @@ export const pdfDownload = async (req, res) => {
                                 columnIndex *
                                 columnWidth;
 
-                            // Cell
                             doc
                                 .rect(
                                     x,
@@ -462,7 +533,6 @@ export const pdfDownload = async (req, res) => {
                                     COLORS.border
                                 );
 
-                            // Cell text
                             doc
                                 .font(
                                     isHeader
@@ -474,7 +544,9 @@ export const pdfDownload = async (req, res) => {
                                     COLORS.dark
                                 )
                                 .text(
-                                    cleanText(cell),
+                                    cleanText(
+                                        cell
+                                    ),
                                     x + padding,
                                     y + padding,
                                     {
@@ -487,13 +559,16 @@ export const pdfDownload = async (req, res) => {
                                             padding * 2,
 
                                         lineGap: 2,
+
+                                        align: "left",
                                     }
                                 );
                         }
                     );
 
                     doc.y =
-                        y + rowHeight;
+                        y +
+                        rowHeight;
                 }
             );
 
@@ -518,7 +593,9 @@ export const pdfDownload = async (req, res) => {
 
             const flushTable = () => {
 
-                if (tableRows.length) {
+                if (
+                    tableRows.length
+                ) {
 
                     renderTable(
                         tableRows
@@ -537,12 +614,19 @@ export const pdfDownload = async (req, res) => {
                 const line =
                     lines[i].trim();
 
-                // Empty line
+                // =================================================
+                // EMPTY LINE
+                // =================================================
+
                 if (!line) {
 
                     flushTable();
 
-                    doc.moveDown(0.2);
+                    /*
+                     * Don't create excessive
+                     * vertical whitespace.
+                     */
+                    doc.moveDown(0.15);
 
                     continue;
                 }
@@ -579,7 +663,9 @@ export const pdfDownload = async (req, res) => {
                         continue;
                     }
 
-                    tableRows.push(cells);
+                    tableRows.push(
+                        cells
+                    );
 
                     const next =
                         lines[i + 1]
@@ -670,7 +756,9 @@ export const pdfDownload = async (req, res) => {
                         /^(\d+)\.\s+(.*)$/
                     );
 
-                if (numberMatch) {
+                if (
+                    numberMatch
+                ) {
 
                     numbered(
                         Number(
@@ -705,9 +793,10 @@ export const pdfDownload = async (req, res) => {
                         .strokeColor(
                             COLORS.border
                         )
+                        .lineWidth(0.5)
                         .stroke();
 
-                    doc.moveDown(0.5);
+                    doc.moveDown(0.4);
 
                     continue;
                 }
@@ -748,38 +837,71 @@ export const pdfDownload = async (req, res) => {
                 defaultMarks;
 
             // =================================================
+            // QUESTION HEADER HEIGHT
+            // =================================================
+
+            doc
+                .font("Helvetica-Bold")
+                .fontSize(10);
+
+            const questionText =
+                `Q${index + 1}. ${cleanText(
+                    question
+                )}`;
+
+            const questionHeight =
+                doc.heightOfString(
+                    questionText,
+                    {
+                        width:
+                            width - 100,
+                        lineGap: 2,
+                    }
+                );
+
+            const headerHeight =
+                Math.max(
+                    42,
+                    questionHeight + 20
+                );
+
+            // =================================================
             // QUESTION HEADER
             // =================================================
 
-            ensureSpace(75);
+            ensureSpace(
+                headerHeight + 45
+            );
 
-            const headerY = doc.y;
+            const headerY =
+                doc.y;
 
+            // Header background
             doc
                 .roundedRect(
                     left,
                     headerY,
                     width,
-                    42,
+                    headerHeight,
                     6
                 )
                 .fillColor(color)
                 .fill();
 
-            // Question
+            // Question text
             doc
                 .font("Helvetica-Bold")
                 .fontSize(10)
-                .fillColor(COLORS.white)
+                .fillColor(
+                    COLORS.white
+                )
                 .text(
-                    `Q${index + 1}. ${cleanText(
-                        question
-                    )}`,
+                    questionText,
                     left + 12,
                     headerY + 10,
                     {
                         width:
-                            width - 85,
+                            width - 100,
                         lineGap: 2,
                     }
                 );
@@ -788,53 +910,75 @@ export const pdfDownload = async (req, res) => {
             doc
                 .font("Helvetica-Bold")
                 .fontSize(8)
-                .fillColor(COLORS.white)
+                .fillColor(
+                    COLORS.white
+                )
                 .text(
                     `${marks} MARKS`,
-                    right - 60,
+                    right - 65,
                     headerY + 15,
                     {
-                        width: 50,
+                        width: 55,
                         align: "right",
                         lineBreak: false,
                     }
                 );
 
+            // Move below question box
             doc.y =
-                headerY + 55;
+                headerY +
+                headerHeight +
+                12;
 
             // =================================================
-            // ANSWER
+            // ANSWER LABEL
             // =================================================
+
+            ensureSpace(30);
 
             doc
                 .font("Helvetica-Bold")
                 .fontSize(10.5)
-                .fillColor(COLORS.green)
+                .fillColor(
+                    COLORS.green
+                )
                 .text(
                     "Answer:",
                     left,
-                    doc.y,
-                    {
-                        lineBreak: false,
-                    }
+                    doc.y
                 );
 
-            doc.moveDown(0.3);
+            /*
+             * Fixed gap.
+             *
+             * This avoids the previous Answer:
+             * overlap seen before Q4.
+             */
+            doc.y += 5;
 
-            doc.fillColor(
-                COLORS.dark
+            // =================================================
+            // ANSWER CONTENT
+            // =================================================
+
+            doc
+                .font("Helvetica")
+                .fontSize(10.5)
+                .fillColor(
+                    COLORS.dark
+                );
+
+            renderMarkdown(
+                answer
             );
 
-            renderMarkdown(answer);
-
-            doc.moveDown(0.5);
+            // Small spacing after answer
+            doc.y += 5;
 
             // =================================================
             // QUESTION SEPARATOR
             // =================================================
 
-            ensureSpace(10);
+            ensureSpace(15);
 
             doc
                 .moveTo(
@@ -851,7 +995,7 @@ export const pdfDownload = async (req, res) => {
                 .lineWidth(0.5)
                 .stroke();
 
-            doc.y += 10;
+            doc.y += 12;
         };
 
         // =====================================================
@@ -867,7 +1011,9 @@ export const pdfDownload = async (req, res) => {
         doc
             .font("Helvetica-Bold")
             .fontSize(24)
-            .fillColor(COLORS.primary)
+            .fillColor(
+                COLORS.primary
+            )
             .text(
                 "SmartNotes AI",
                 left,
@@ -883,7 +1029,9 @@ export const pdfDownload = async (req, res) => {
         doc
             .font("Helvetica")
             .fontSize(11)
-            .fillColor(COLORS.gray)
+            .fillColor(
+                COLORS.gray
+            )
             .text(
                 "AI-Powered Exam Preparation",
                 left,
@@ -913,7 +1061,8 @@ export const pdfDownload = async (req, res) => {
             {
                 bold: true,
                 size: 11,
-                color: COLORS.primary,
+                color:
+                    COLORS.primary,
             }
         );
 
@@ -921,7 +1070,9 @@ export const pdfDownload = async (req, res) => {
         // SUB TOPICS
         // =====================================================
 
-        if (result.subTopics) {
+        if (
+            result.subTopics
+        ) {
 
             heading(
                 "Important Sub Topics",
@@ -946,7 +1097,9 @@ export const pdfDownload = async (req, res) => {
 
                         topics.forEach(
                             topic =>
-                                bullet(topic)
+                                bullet(
+                                    topic
+                                )
                         );
                     }
                 }
@@ -984,7 +1137,9 @@ export const pdfDownload = async (req, res) => {
 
             result.revisionPoints.forEach(
                 point =>
-                    bullet(point)
+                    bullet(
+                        point
+                    )
             );
         }
 
@@ -1007,12 +1162,16 @@ export const pdfDownload = async (req, res) => {
             paragraph(
                 "These answers are designed for 5-mark examination questions.",
                 {
-                    color: COLORS.gray,
+                    color:
+                        COLORS.gray,
                 }
             );
 
             result.questions.short.forEach(
-                (item, index) => {
+                (
+                    item,
+                    index
+                ) => {
 
                     renderQuestion(
                         item,
@@ -1043,12 +1202,16 @@ export const pdfDownload = async (req, res) => {
             paragraph(
                 "These answers are designed for 10-mark examination questions.",
                 {
-                    color: COLORS.gray,
+                    color:
+                        COLORS.gray,
                 }
             );
 
             result.questions.long.forEach(
-                (item, index) => {
+                (
+                    item,
+                    index
+                ) => {
 
                     renderQuestion(
                         item,
@@ -1086,17 +1249,28 @@ export const pdfDownload = async (req, res) => {
         // FOOTERS
         // =====================================================
 
+        /*
+         * At this point all content pages have already been
+         * generated.
+         *
+         * bufferPages:true allows us to go back through those
+         * pages and draw the footer.
+         */
+
         const pages =
             doc.bufferedPageRange();
 
         for (
             let i = pages.start;
             i <
-            pages.start + pages.count;
+            pages.start +
+            pages.count;
             i++
         ) {
 
-            doc.switchToPage(i);
+            doc.switchToPage(
+                i
+            );
 
             drawFooter(
                 i + 1
@@ -1116,11 +1290,16 @@ export const pdfDownload = async (req, res) => {
             error
         );
 
-        if (!res.headersSent) {
+        if (
+            !res.headersSent
+        ) {
 
             return res.status(500).json({
-                error: "Failed to generate PDF",
-                details: error.message,
+                error:
+                    "Failed to generate PDF",
+
+                details:
+                    error.message,
             });
         }
     }
