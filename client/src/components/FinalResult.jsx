@@ -39,7 +39,6 @@ td: ({ children }) => ( <td className="border border-gray-300 px-4 py-2">
 
 function FinalResult({ result }) {
 
-```
 const [quickRevision, setQuickRevision] = useState(false)
 
 if (
@@ -437,13 +436,12 @@ return (
 
     </div>
 )
-```
 
 }
 
 function SectionHeader({ icon, title, color }) {
 
-```
+
 const colors = {
     indigo: "from-indigo-100 to-indigo-50 text-indigo-700",
     purple: "from-purple-100 to-purple-50 text-purple-700",
@@ -465,7 +463,7 @@ return (
         <span>{title}</span>
     </div>
 )
-```
+
 
 }
 
