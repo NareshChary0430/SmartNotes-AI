@@ -234,7 +234,7 @@ Only include relevant sections.
 
 questions.short MUST contain 5-MARK exam questions WITH ANSWERS.
 
-Generate 5 to 8 short-answer questions.
+Generate 10 short-answer questions.
 
 Each 5-mark answer MUST:
 
@@ -280,7 +280,7 @@ Each item in questions.short MUST follow this format:
 
 questions.long MUST contain 10-MARK exam questions WITH COMPLETE ANSWERS.
 
-Generate 4 to 6 long-answer questions.
+Generate 10 long-answer questions.
 
 Each 10-mark answer MUST:
 
